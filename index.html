@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Hello, World!</title>
+    <style>
+        body {
+            box-sizing: border-box;
+
+            h1 {
+                text-align: center;
+                font-weight: lighter;
+            }
+        }
+
+        form {
+            display: block;
+            text-align: center;
+            margin-bottom: 10px;
+
+            button {
+                background: #0080ff;
+                color: white;
+                border: 1px solid #0080ff;
+                padding: 10px 20px 10px 20px;
+                margin: 5px;
+                border-radius: 5px;
+            }
+
+            input {
+                background: white;
+                color: #0080ff;
+                padding: 10px 20px 10px 20px;
+                border: 1px solid #0080ff;
+                border-radius: 5px;
+            }
+        }
+
+        div {
+            background: #82ceec;
+            position: relative;
+            height: 50vh;
+            width: 100%;
+
+
+            img {
+                position: absolute;
+                max-height: 500px;
+                max-width: 500px;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Dog Glossary</h1>
+    <form method="post">
+        <button id="button-random-dog">Show Random Dog</button>
+        <label for="input-breed"></label>
+        <input id="input-breed" type="text" placeholder="Enter a breed" />
+        <button id="button-show-breed" type="submit">Show Breed</button>
+        <button id="button-show-sub-breed" type="submit">Show Sub-Breed</button>
+        <button id="button-show-all" type="submit">Show All Breeds</button>
+    </form>
+    <div id="content"></div>
+    <script>
+    const divElement = document.getElementById("content");
+    const inputElement = document.getElementById("input-breed");
+
+    async function containsKey(key) {
+
+        try {
+            const urlDogList = 'https://dog.ceo/api/breeds/list/all';
+            const responseList = await fetch(urlDogList);
+            const listDog = await responseList.json();
+            console.log('listDog.message:', listDog.message);
+            return listDog.message.hasOwnProperty(key);
+
+        } catch (error) {
+            console.error("Wystąpił błąd:", error);
+        }
+
+    }
+
+    document.getElementById("button-random-dog").addEventListener("click", async (event) => {
+        try {
+            event.preventDefault();
+            const urlRandom = 'https://dog.ceo/api/breeds/image/random';
+            const response = await fetch(urlRandom);
+            const data = await response.json();
+            divElement.innerHTML = `<img src='${data.message}'/>`;
+
+        } catch (error) {
+            console.error(`Download error: ${error.message}`);
+        }
+    });
+
+    document.getElementById("button-show-breed").addEventListener("click", async (event) => {
+        try {
+            event.preventDefault();
+            const breed = inputElement.value;
+            const smallLetterBreed = breed.toLowerCase();
+            const urlInput = `https://dog.ceo/api/breed/${smallLetterBreed}/images/random`;
+            const response = await fetch(urlInput);
+            const data = await response.json();
+            console.log('data:', data);
+
+            const contains = await containsKey(smallLetterBreed);
+
+            if (contains) {
+                divElement.innerHTML = `<img src='${data.message}'/>`;
+            } else {
+                divElement.innerHTML = '<p>Breed not found!</p>';
+            }
+
+            console.log('Wprowadzona rasa:', breed);
+            console.log('url:', urlInput);
+        } catch (error) {
+            console.error(`Download error: ${error.message}`);
+        }
+    });
+
+    document.getElementById('button-show-sub-breed').addEventListener("click", async (event) => {
+        try {
+            event.preventDefault();
+            const subreed = inputElement.value.toLowerCase();
+            const urlDogSubrace = `https://dog.ceo/api/breed/${subreed}/list`;
+
+            const responseSubrace = await fetch(urlDogSubrace);
+            const listSubraceList = await responseSubrace.json();
+
+            console.log('listSubraceList:', listSubraceList);
+            const lenghtSubrace = listSubraceList.message;
+
+            console.log('lenghtSubrace:', lenghtSubrace);
+
+            const contains = await containsKey(subreed);
+            console.log('contains:', contains);
+
+            if (!contains) {
+
+                divElement.innerHTML = '<p>Breed not found!</p>';
+
+            } else if (typeof lenghtSubrace !== 'string' && lenghtSubrace.length > 0) {
+                divElement.innerHTML = "<ol id='listSubrace'></ol>";
+                for ( let subrace of listSubraceList.message) {
+                    let list = document.getElementById("listSubrace");
+                    let newItem = document.createElement("li");
+                    newItem.textContent = subrace;
+                    list.appendChild(newItem);
+                }
+            } else {
+                divElement.innerHTML = '<p>No sub-breeds found!</p>';
+            }
+
+        } catch (error) {
+            console.error(`listSubraceList: ${error.message}`);
+        }
+    });
+
+    document.getElementById('button-show-all').addEventListener("click", async (event) => {
+        try {
+            event.preventDefault();
+
+            const urlDogList = 'https://dog.ceo/api/breeds/list/all';
+            const responseList = await fetch(urlDogList);
+            const listDog = await responseList.json();
+            console.log('List:', listDog);
+            console.log('AllList:', listDog.message);
+
+            divElement.innerHTML = "<ol id='listSubrace'></ol>";
+
+            let i = 0;
+
+            for (let breed in listDog.message) {
+                i++;
+                let list = document.getElementById("listSubrace");
+                let newItem = document.createElement("li");
+                newItem.id = `list${i}`;
+                newItem.textContent = breed;
+                list.appendChild(newItem);
+
+                let subBreeds = listDog.message[breed];
+                if (subBreeds.length > 0) {
+                    let subList = document.createElement("ul");
+                    subList.id = `sublist${i}`;
+                    newItem.appendChild(subList);
+
+                    for (let sub of subBreeds) {
+                        let subItem = document.createElement("li");
+                        subItem.textContent = sub;
+                        subList.appendChild(subItem);
+                    }
+                }
+            }
+
+        } catch (error) {
+            console.error(`listSubraceList: ${error.message}`);
+        }
+    });
+    </script>
+</body>
+</html>
